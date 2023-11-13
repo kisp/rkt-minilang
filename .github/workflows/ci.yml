@@ -1,0 +1,24 @@
+# See
+# Using GitHub Actions to Test Racket Code (Revised) — defn.io
+# https://defn.io/2020/05/05/github-actions-for-racket-revised/
+
+on:
+  - push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+      - name: Install Racket
+        uses: Bogdanp/setup-racket@v1.11
+        with:
+          architecture: 'x64'
+          distribution: 'full'
+          variant: 'CS'
+          version: '8.10'
+      - name: Install Package and its Dependencies
+        run: raco pkg install --auto --batch --no-docs
+      - name: Run Tests
+        run: make test

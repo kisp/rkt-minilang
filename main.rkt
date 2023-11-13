@@ -21,6 +21,22 @@
 
 (define (tok/p s) (trail-ws/p (string/p s)))
 
+(define (strs/p c . lst)
+  (define (rec lst acc)
+    (match lst
+      [(list) (pure (apply c (reverse acc)))]
+      [(cons (? string? a) b)
+       (chain
+        (lambda (_)
+          (rec b acc))
+        (tok/p a))]
+      [(cons a b)
+       (chain
+        (lambda (s)
+          (rec b (cons s acc)))
+        a)]))
+  (rec lst '()))
+
 (define const-exp/p
   (do
     [x <- integer/p]
@@ -36,15 +52,21 @@
     (tok/p ")")
     (pure (diff-exp e1 e2))))
 
+;; (define if-exp/p
+;;   (do
+;;     (tok/p "if")
+;;     [e1 <- exp/p]
+;;     (tok/p "then")
+;;     [e2 <- exp/p]
+;;     (tok/p "else")
+;;     [e3 <- exp/p]
+;;     (pure (if-exp e1 e2 e3))))
+
 (define if-exp/p
-  (do
-    (tok/p "if")
-    [e1 <- exp/p]
-    (tok/p "then")
-    [e2 <- exp/p]
-    (tok/p "else")
-    [e3 <- exp/p]
-    (pure (if-exp e1 e2 e3))))
+  (strs/p if-exp
+          "if" (delay/p exp/p)
+          "then" (delay/p exp/p)
+          "else" (delay/p exp/p)))
 
 (define exp/p
   (trail-ws/p

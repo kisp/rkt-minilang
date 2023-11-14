@@ -1,11 +1,36 @@
 #lang racket/base
+
+(require (for-syntax racket/base racket/syntax))
 (require racket/match
          megaparsack megaparsack/text
          data/monad data/applicative)
 
-(struct const-exp (e1) #:transparent)
-(struct diff-exp (e1 e2) #:transparent)
-(struct if-exp (e1 e2 e3) #:transparent)
+(define-syntax (define-prod stx)
+  (syntax-case stx ()
+    [(_ name (fields ...))
+     (with-syntax ([name/p (format-id #'name "~a/p" #'name)]
+                   [field-names (for/list ([field (syntax->datum #'(fields ...))]
+                                           #:unless (string? field))
+                                  (car field))]
+                   [parsers (for/list ([field (syntax->list #'(fields ...))])
+                              (if (string? (syntax-e field))
+                                  field
+                                  (syntax-case field ()
+                                    [(_ parser)
+                                     (with-syntax ([parser/p (format-id #'parser "~a/p" #'parser)])
+                                       #'(delay/p parser/p))])))])
+       #`(begin
+           (struct name field-names #:transparent)
+           (define name/p
+             (parse-and-apply/p
+              name
+              #,@(for/list ([field (syntax->list #'(fields ...))])
+                   (if (string? (syntax-e field))
+                       field
+                       (syntax-case field ()
+                         [(_ parser)
+                          (with-syntax ([parser/p (format-id #'parser "~a/p" #'parser)])
+                            #'(delay/p parser/p))])))))))]))
 
 (define (full/p p)
   (do
@@ -21,7 +46,7 @@
 
 (define (tok/p s) (trail-ws/p (string/p s)))
 
-(define (strs/p c . lst)
+(define (parse-and-apply/p c . lst)
   (define (rec lst acc)
     (match lst
       [(list) (pure (apply c (reverse acc)))]
@@ -37,36 +62,14 @@
         a)]))
   (rec lst '()))
 
+(struct const-exp (e1) #:transparent)
 (define const-exp/p
   (do
     [x <- integer/p]
     (pure (const-exp x))))
 
-(define diff-exp/p
-  (do
-    (tok/p "-")
-    (tok/p "(")
-    [e1 <- exp/p]
-    (tok/p ",")
-    [e2 <- exp/p]
-    (tok/p ")")
-    (pure (diff-exp e1 e2))))
-
-;; (define if-exp/p
-;;   (do
-;;     (tok/p "if")
-;;     [e1 <- exp/p]
-;;     (tok/p "then")
-;;     [e2 <- exp/p]
-;;     (tok/p "else")
-;;     [e3 <- exp/p]
-;;     (pure (if-exp e1 e2 e3))))
-
-(define if-exp/p
-  (strs/p if-exp
-          "if" (delay/p exp/p)
-          "then" (delay/p exp/p)
-          "else" (delay/p exp/p)))
+(define-prod diff-exp ("-" "(" [e1 exp] "," [e2 exp] ")"))
+(define-prod if-exp ("if" [e1 exp] "then" [e2 exp] "else" [e3 exp]))
 
 (define exp/p
   (trail-ws/p

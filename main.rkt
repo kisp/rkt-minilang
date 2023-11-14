@@ -62,12 +62,9 @@
         a)]))
   (rec lst '()))
 
-(struct const-exp (e1) #:transparent)
-(define const-exp/p
-  (do
-    [x <- integer/p]
-    (pure (const-exp x))))
+(define num/p integer/p)
 
+(define-prod const-exp ([e1 num]))
 (define-prod diff-exp ("-" "(" [e1 exp] "," [e2 exp] ")"))
 (define-prod zero?-exp ("zero?" "(" [e1 exp] ")"))
 (define-prod if-exp ("if" [e1 exp] "then" [e2 exp] "else" [e3 exp]))
@@ -100,6 +97,9 @@
 
   (define (check-exp-parse? s e)
     (check-equal? (parse-exp!-w-literals s) e))
+
+  (check-exp-parse? "1" 1)
+  (check-exp-parse? "123" 123)
 
   (check-exp-parse? "-(1, 2)" (diff-exp 1 2))
   (check-exp-parse? "-(1,2)" (diff-exp 1 2))

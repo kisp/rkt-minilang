@@ -63,11 +63,17 @@
   (rec lst '()))
 
 (define num/p integer/p)
+(define var/p
+  (do
+    [c <- letter/p]
+    [cs <- (many/p (or/p letter/p digit/p))]
+    (pure (string->symbol (list->string (cons c cs))))))
 
 (define-prod const-exp ([e1 num]))
 (define-prod diff-exp ("-" "(" [e1 exp] "," [e2 exp] ")"))
 (define-prod zero?-exp ("zero?" "(" [e1 exp] ")"))
 (define-prod if-exp ("if" [e1 exp] "then" [e2 exp] "else" [e3 exp]))
+(define-prod var-exp ([e1 var]))
 
 (define exp/p
   (trail-ws/p
@@ -75,7 +81,8 @@
     const-exp/p
     diff-exp/p
     zero?-exp/p
-    if-exp/p)))
+    if-exp/p
+    var-exp/p)))
 
 (define (parse-exp! s)
   (parse-result! (parse-string (full/p exp/p) s)))
@@ -86,7 +93,8 @@
       [(const-exp x) x]
       [(diff-exp e1 e2) (diff-exp (rec e1) (rec e2))]
       [(zero?-exp e1) (zero?-exp (rec e1))]
-      [(if-exp e1 e2 e3) (if-exp (rec e1) (rec e2) (rec e3))]))
+      [(if-exp e1 e2 e3) (if-exp (rec e1) (rec e2) (rec e3))]
+      [(var-exp e1) e1]))
   (rec exp))
 
 (define (parse-exp!-w-literals s)
@@ -111,6 +119,10 @@
   (check-exp-parse? "if 1 then 2 else 3" (if-exp 1 2 3))
   (check-exp-parse? "if if 1 then 2 else 3 then 2 else 3" (if-exp (if-exp 1 2 3) 2 3))
   (check-exp-parse? "if1then2else3" (if-exp 1 2 3)) ;maybe not :)
+
+  (check-exp-parse? "a" 'a)
+  (check-exp-parse? "ab" 'ab)
+  (check-exp-parse? "x1" 'x1)
 
   (check-exp-parse?
    "if if -

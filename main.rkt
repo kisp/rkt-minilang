@@ -87,8 +87,13 @@
     let-exp/p
     var-exp/p)))
 
+(define-prod a-program ([e1 exp]))
+
 (define (parse-exp! s)
   (parse-result! (parse-string (full/p exp/p) s)))
+
+(define (parse-program! s)
+  (parse-result! (parse-string (full/p a-program/p) s)))
 
 (define (exp->exp-w-literals exp)
   (define (rec exp)
@@ -101,14 +106,24 @@
       [(let-exp id e1 body) (let-exp (rec id) (rec e1) (rec body))]))
   (rec exp))
 
+(define (program->program-w-literals program)
+  (match program
+    [(a-program e1) (a-program (exp->exp-w-literals e1))]))
+
 (define (parse-exp!-w-literals s)
   (exp->exp-w-literals (parse-exp! s)))
+
+(define (parse-program!-w-literals s)
+  (program->program-w-literals (parse-program! s)))
 
 (module+ test
   (require rackcheck rackunit)
 
   (define-syntax-rule (check-exp-parse? s e)
     (check-equal? (parse-exp!-w-literals s) e))
+
+  (define-syntax-rule (check-program-parse? s e)
+    (check-equal? (parse-program!-w-literals s) e))
 
   (check-exp-parse? "1" 1)
   (check-exp-parse? "123" 123)
@@ -142,6 +157,8 @@ then
 -(2,3)
 else 2 then 2 else 1"
    (if-exp (if-exp (diff-exp 123 15) (diff-exp 2 3) 2) 2 1))
+
+  (check-program-parse? "-(55, -(x, 11))" (a-program (diff-exp 55 (diff-exp 'x 11))))
 
   ;; (check-property
   ;;  (property ([n (gen:integer-in 3 100)])

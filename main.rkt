@@ -38,6 +38,11 @@
     eof/p
     (pure x)))
 
+(define (leading-ws/p p)
+  (do
+    (many/p space/p)
+    p))
+
 (define (trail-ws/p p)
   (do
     [x <- p]
@@ -93,7 +98,7 @@
   (parse-result! (parse-string (full/p exp/p) s)))
 
 (define (parse-program! s)
-  (parse-result! (parse-string (full/p a-program/p) s)))
+  (parse-result! (parse-string (full/p (leading-ws/p a-program/p)) s)))
 
 (define (exp->exp-w-literals exp)
   (define (rec exp)
@@ -159,6 +164,7 @@ else 2 then 2 else 1"
    (if-exp (if-exp (diff-exp 123 15) (diff-exp 2 3) 2) 2 1))
 
   (check-program-parse? "-(55, -(x, 11))" (a-program (diff-exp 55 (diff-exp 'x 11))))
+  (check-program-parse? " -(55, -(x, 11))" (a-program (diff-exp 55 (diff-exp 'x 11))))
 
   ;; (check-property
   ;;  (property ([n (gen:integer-in 3 100)])

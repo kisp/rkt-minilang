@@ -64,16 +64,18 @@
 
 (define num/p integer/p)
 (define var/p
-  (do
-    [c <- letter/p]
-    [cs <- (many/p (or/p letter/p digit/p))]
-    (pure (string->symbol (list->string (cons c cs))))))
+  (trail-ws/p
+   (do
+     [c <- letter/p]
+     [cs <- (many/p (or/p letter/p digit/p))]
+     (pure (string->symbol (list->string (cons c cs)))))))
 
 (define-prod const-exp ([e1 num]))
 (define-prod diff-exp ("-" "(" [e1 exp] "," [e2 exp] ")"))
 (define-prod zero?-exp ("zero?" "(" [e1 exp] ")"))
 (define-prod if-exp ("if" [e1 exp] "then" [e2 exp] "else" [e3 exp]))
 (define-prod var-exp ([e1 var]))
+(define-prod let-exp ("let" [id var-exp] "=" [e1 exp] "in" [body exp]))
 
 (define exp/p
   (trail-ws/p
@@ -82,6 +84,7 @@
     diff-exp/p
     zero?-exp/p
     if-exp/p
+    let-exp/p
     var-exp/p)))
 
 (define (parse-exp! s)
@@ -94,7 +97,8 @@
       [(diff-exp e1 e2) (diff-exp (rec e1) (rec e2))]
       [(zero?-exp e1) (zero?-exp (rec e1))]
       [(if-exp e1 e2 e3) (if-exp (rec e1) (rec e2) (rec e3))]
-      [(var-exp e1) e1]))
+      [(var-exp e1) e1]
+      [(let-exp id e1 body) (let-exp (rec id) (rec e1) (rec body))]))
   (rec exp))
 
 (define (parse-exp!-w-literals s)
@@ -103,7 +107,7 @@
 (module+ test
   (require rackcheck rackunit)
 
-  (define (check-exp-parse? s e)
+  (define-syntax-rule (check-exp-parse? s e)
     (check-equal? (parse-exp!-w-literals s) e))
 
   (check-exp-parse? "1" 1)
@@ -123,6 +127,10 @@
   (check-exp-parse? "a" 'a)
   (check-exp-parse? "ab" 'ab)
   (check-exp-parse? "x1" 'x1)
+
+  (check-exp-parse? "let x=1 in x" (let-exp 'x 1 'x))
+  (check-exp-parse? "let x = 1 in -(x, 1)" (let-exp 'x 1 (diff-exp 'x 1)))
+  (check-exp-parse? "let x = -(y, 1) in x" (let-exp 'x (diff-exp 'y 1) 'x))
 
   (check-exp-parse?
    "if if -

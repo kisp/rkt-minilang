@@ -69,6 +69,7 @@
     (pure (const-exp x))))
 
 (define-prod diff-exp ("-" "(" [e1 exp] "," [e2 exp] ")"))
+(define-prod zero?-exp ("zero?" "(" [e1 exp] ")"))
 (define-prod if-exp ("if" [e1 exp] "then" [e2 exp] "else" [e3 exp]))
 
 (define exp/p
@@ -76,6 +77,7 @@
    (or/p
     const-exp/p
     diff-exp/p
+    zero?-exp/p
     if-exp/p)))
 
 (define (parse-exp! s)
@@ -86,6 +88,7 @@
     (match exp
       [(const-exp x) x]
       [(diff-exp e1 e2) (diff-exp (rec e1) (rec e2))]
+      [(zero?-exp e1) (zero?-exp (rec e1))]
       [(if-exp e1 e2 e3) (if-exp (rec e1) (rec e2) (rec e3))]))
   (rec exp))
 
@@ -98,13 +101,16 @@
   (define (check-exp-parse? s e)
     (check-equal? (parse-exp!-w-literals s) e))
 
-  (check-exp-parse? "if 1 then 2 else 3" (if-exp 1 2 3))
-  (check-exp-parse? "if if 1 then 2 else 3 then 2 else 3" (if-exp (if-exp 1 2 3) 2 3))
-  (check-exp-parse? "if1then2else3" (if-exp 1 2 3)) ;maybe not :)
-
   (check-exp-parse? "-(1, 2)" (diff-exp 1 2))
   (check-exp-parse? "-(1,2)" (diff-exp 1 2))
   (check-exp-parse? "- ( 1 , 2 )" (diff-exp 1 2))
+
+  (check-exp-parse? "zero?(1)" (zero?-exp 1))
+  (check-exp-parse? "zero? ( 123 )" (zero?-exp 123))
+
+  (check-exp-parse? "if 1 then 2 else 3" (if-exp 1 2 3))
+  (check-exp-parse? "if if 1 then 2 else 3 then 2 else 3" (if-exp (if-exp 1 2 3) 2 3))
+  (check-exp-parse? "if1then2else3" (if-exp 1 2 3)) ;maybe not :)
 
   (check-exp-parse?
    "if if -

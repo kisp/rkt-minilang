@@ -1,5 +1,7 @@
 #lang racket/base
 
+(provide parse-program parse-program!)
+
 (require (for-syntax racket/base racket/syntax))
 (require racket/match
          megaparsack megaparsack/text
@@ -98,7 +100,10 @@
   (parse-result! (parse-string (full/p exp/p) s)))
 
 (define (parse-program! s)
-  (parse-result! (parse-string (full/p (leading-ws/p a-program/p)) s)))
+  (parse-result! (parse-program s)))
+
+(define (parse-program s)
+  (parse-string (full/p (leading-ws/p a-program/p)) s))
 
 (define (exp->exp-w-literals exp)
   (define (rec exp)

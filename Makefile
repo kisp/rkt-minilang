@@ -6,3 +6,6 @@ main-repl:
 
 test:
 	raco test *-test.rkt
+
+compile:
+	raco make *.rkt

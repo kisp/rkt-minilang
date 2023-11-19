@@ -5,7 +5,8 @@
 (require (for-syntax racket/base racket/syntax))
 (require racket/match
          megaparsack megaparsack/text
-         data/monad data/applicative)
+         data/monad data/applicative
+         "types.rkt")
 
 (define-syntax (define-prod stx)
   (syntax-case stx ()
@@ -22,7 +23,6 @@
                                      (with-syntax ([parser/p (format-id #'parser "~a/p" #'parser)])
                                        #'(delay/p parser/p))])))])
        #`(begin
-           (struct name field-names #:transparent)
            (define name/p
              (parse-and-apply/p
               name
@@ -105,57 +105,57 @@
 (define (parse-program s)
   (parse-string (full/p (leading-ws/p a-program/p)) s))
 
-(define (exp->exp-w-literals exp)
-  (define (rec exp)
-    (match exp
-      [(const-exp x) x]
-      [(diff-exp e1 e2) (diff-exp (rec e1) (rec e2))]
-      [(zero?-exp e1) (zero?-exp (rec e1))]
-      [(if-exp e1 e2 e3) (if-exp (rec e1) (rec e2) (rec e3))]
-      [(var-exp e1) e1]
-      [(let-exp id e1 body) (let-exp (rec id) (rec e1) (rec body))]))
-  (rec exp))
-
-(define (program->program-w-literals program)
-  (match program
-    [(a-program e1) (a-program (exp->exp-w-literals e1))]))
-
-(define (parse-exp!-w-literals s)
-  (exp->exp-w-literals (parse-exp! s)))
-
-(define (parse-program!-w-literals s)
-  (program->program-w-literals (parse-program! s)))
-
 (module+ test
-  (require rackcheck rackunit)
+  ;; (require rackcheck)
+  (require rackunit)
 
   (define-syntax-rule (check-exp-parse? s e)
-    (check-equal? (parse-exp!-w-literals s) e))
+    (check-equal? (parse-exp! s) e))
 
   (define-syntax-rule (check-program-parse? s e)
-    (check-equal? (parse-program!-w-literals s) e))
+    (check-equal? (parse-program! s) e))
 
-  (check-exp-parse? "1" 1)
-  (check-exp-parse? "123" 123)
+  (define (call-with-to-exp fn . args)
+    (define (to-exp x)
+      (match x
+        [(? integer?) (const-exp x)]
+        [(? symbol?) (var-exp x)]
+        [_ x]))
+    (apply fn (map to-exp args)))
 
-  (check-exp-parse? "-(1, 2)" (diff-exp 1 2))
-  (check-exp-parse? "-(1,2)" (diff-exp 1 2))
-  (check-exp-parse? "- ( 1 , 2 )" (diff-exp 1 2))
+  (define (diff-exp* e1 e2)
+    (call-with-to-exp diff-exp e1 e2))
 
-  (check-exp-parse? "zero?(1)" (zero?-exp 1))
-  (check-exp-parse? "zero? ( 123 )" (zero?-exp 123))
+  (define (zero?-exp* e1)
+    (call-with-to-exp zero?-exp e1))
 
-  (check-exp-parse? "if 1 then 2 else 3" (if-exp 1 2 3))
-  (check-exp-parse? "if if 1 then 2 else 3 then 2 else 3" (if-exp (if-exp 1 2 3) 2 3))
-  (check-exp-parse? "if1then2else3" (if-exp 1 2 3)) ;maybe not :)
+  (define (if-exp* e1 e2 e3)
+    (call-with-to-exp if-exp e1 e2 e3))
 
-  (check-exp-parse? "a" 'a)
-  (check-exp-parse? "ab" 'ab)
-  (check-exp-parse? "x1" 'x1)
+  (define (let-exp* e1 e2 e3)
+    (call-with-to-exp let-exp e1 e2 e3))
 
-  (check-exp-parse? "let x=1 in x" (let-exp 'x 1 'x))
-  (check-exp-parse? "let x = 1 in -(x, 1)" (let-exp 'x 1 (diff-exp 'x 1)))
-  (check-exp-parse? "let x = -(y, 1) in x" (let-exp 'x (diff-exp 'y 1) 'x))
+  (check-exp-parse? "1" (const-exp 1))
+  (check-exp-parse? "123" (const-exp 123))
+
+  (check-exp-parse? "-(1, 2)" (diff-exp* 1 2))
+  (check-exp-parse? "-(1,2)" (diff-exp* 1 2))
+  (check-exp-parse? "- ( 1 , 2 )" (diff-exp* 1 2))
+
+  (check-exp-parse? "zero?(1)" (zero?-exp* 1))
+  (check-exp-parse? "zero? ( 123 )" (zero?-exp* 123))
+
+  (check-exp-parse? "if 1 then 2 else 3" (if-exp* 1 2 3))
+  (check-exp-parse? "if if 1 then 2 else 3 then 2 else 3" (if-exp* (if-exp* 1 2 3) 2 3))
+  (check-exp-parse? "if1then2else3" (if-exp* 1 2 3)) ;maybe not :)
+
+  (check-exp-parse? "a" (var-exp 'a))
+  (check-exp-parse? "ab" (var-exp 'ab))
+  (check-exp-parse? "x1" (var-exp 'x1))
+
+  (check-exp-parse? "let x=1 in x" (let-exp* 'x 1 'x))
+  (check-exp-parse? "let x = 1 in -(x, 1)" (let-exp* 'x 1 (diff-exp* 'x 1)))
+  (check-exp-parse? "let x = -(y, 1) in x" (let-exp* 'x (diff-exp* 'y 1) 'x))
 
   (check-exp-parse?
    "if if -
@@ -166,10 +166,10 @@
 then
 -(2,3)
 else 2 then 2 else 1"
-   (if-exp (if-exp (diff-exp 123 15) (diff-exp 2 3) 2) 2 1))
+   (if-exp (if-exp (diff-exp* 123 15) (diff-exp* 2 3) (const-exp 2)) (const-exp 2) (const-exp 1)))
 
-  (check-program-parse? "-(55, -(x, 11))" (a-program (diff-exp 55 (diff-exp 'x 11))))
-  (check-program-parse? " -(55, -(x, 11))" (a-program (diff-exp 55 (diff-exp 'x 11))))
+  (check-program-parse? "-(55, -(x, 11))" (a-program (diff-exp* 55 (diff-exp* 'x 11))))
+  (check-program-parse? " -(55, -(x, 11))" (a-program (diff-exp* 55 (diff-exp* 'x 11))))
 
   ;; (check-property
   ;;  (property ([n (gen:integer-in 3 100)])

@@ -1,6 +1,7 @@
 #lang racket/base
 
-(provide parse-program parse-program!)
+(provide parse-program parse-program!
+         parse-exp parse-exp!)
 
 (require (for-syntax racket/base racket/syntax))
 (require racket/match
@@ -97,7 +98,10 @@
 (define-prod a-program ([e1 exp]))
 
 (define (parse-exp! s)
-  (parse-result! (parse-string (full/p exp/p) s)))
+  (parse-result! (parse-exp s)))
+
+(define (parse-exp s)
+  (parse-string (full/p exp/p) s))
 
 (define (parse-program! s)
   (parse-result! (parse-program s)))

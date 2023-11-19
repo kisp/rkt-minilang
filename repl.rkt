@@ -3,7 +3,8 @@
          racket/match racket/pretty
          data/either
          megaparsack
-         "main.rkt")
+         "main.rkt"
+         "eval.rkt")
 
 (define (readline prompt)
   (if (member (getenv "TERM") '("dumb"))
@@ -22,7 +23,7 @@
       (unless (or (eof-object? input)
                   (member input '("q" "quit" "exit")))
         (match (parse-program input)
-          [(success ast) (pretty-print ast)]
+          [(success ast) (pretty-print (value-of-program ast))]
           [(failure message) (displayln (parse-error->string message))])
         (rec)))))
 

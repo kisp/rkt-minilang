@@ -5,4 +5,4 @@ main-repl:
 	racket -ie '(enter! "main.rkt")'
 
 test:
-	raco test main.rkt
+	raco test main.rkt define-datatype-tests.rkt

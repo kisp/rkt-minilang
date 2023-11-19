@@ -2,7 +2,7 @@ repl:
 	racket repl.rkt
 
 main-repl:
-	racket -ie '(enter! "main.rkt")'
+	racket -ie '(enter! "repl.rkt")'
 
 test:
-	raco test main.rkt *-tests.rkt
+	raco test *-tests.rkt

@@ -3,7 +3,7 @@
          racket/match racket/pretty
          data/either
          megaparsack
-         "main.rkt"
+         "parse.rkt"
          "eval.rkt")
 
 (define (readline prompt)

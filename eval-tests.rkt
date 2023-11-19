@@ -3,7 +3,7 @@
 (require typed/rackunit
          "types.rkt"
          "eval.rkt")
-(require/typed "main.rkt"
+(require/typed "parse.rkt"
   [parse-program! (-> String Progr)]
   [parse-exp! (-> String Exp)])
 

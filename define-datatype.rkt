@@ -9,6 +9,10 @@
     (syntax-case stx ()
       [(_ type-name . variants)
        #`(begin
+           (provide type-name)
+           (provide #,@(for/list ([variant (syntax->list #'variants)])
+                         (with-syntax ([(variant-name . fields) variant])
+                           #'(struct-out variant-name))))
            (define-type type-name
              (U #,@(for/list ([variant (syntax->list #'variants)])
                      (with-syntax ([(variant-name . fields) variant])

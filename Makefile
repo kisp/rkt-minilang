@@ -5,4 +5,4 @@ main-repl:
 	racket -ie '(enter! "repl.rkt")'
 
 test:
-	raco test *-tests.rkt
+	raco test *-test.rkt

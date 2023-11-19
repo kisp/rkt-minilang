@@ -9,3 +9,6 @@ test:
 
 compile:
 	raco make *.rkt
+
+clean:
+	rm -rf compiled

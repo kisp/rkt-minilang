@@ -83,7 +83,7 @@
 (define-prod zero?-exp ("zero?" "(" [e1 exp] ")"))
 (define-prod if-exp ("if" [e1 exp] "then" [e2 exp] "else" [e3 exp]))
 (define-prod var-exp ([e1 var]))
-(define-prod let-exp ("let" [id var-exp] "=" [e1 exp] "in" [body exp]))
+(define-prod let-exp ("let" [id var] "=" [e1 exp] "in" [body exp]))
 
 (define exp/p
   (trail-ws/p

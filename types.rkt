@@ -2,10 +2,14 @@
 
 (require "define-datatype.rkt")
 
-(provide Num Var)
+(provide Num Var ExpVal Env)
 
 (define-type Num Integer)
 (define-type Var Symbol)
+
+(define-type ExpVal (U Integer Boolean))
+
+(define-type Env (Listof (Pairof Var ExpVal)))
 
 (define-datatype Exp
   (const-exp (e1 Num))
@@ -13,7 +17,7 @@
   (zero?-exp (e1 Exp))
   (if-exp (e1 Exp) (e2 Exp) (e3 Exp))
   (var-exp (e1 Var))
-  (let-exp (id var-exp) (e1 Exp) (body Exp)))
+  (let-exp (id Var) (e1 Exp) (body Exp)))
 
 (define-datatype Progr
   (a-program (e1 Exp)))

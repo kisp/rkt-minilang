@@ -12,12 +12,13 @@
 (define-syntax-rule (check-program-parse? s e)
   (check-equal? (parse-program! s) e))
 
-(define (call-with-to-exp fn . args)
-  (define (to-exp x)
+(define (to-exp x)
     (match x
       [(? integer?) (const-exp x)]
       [(? symbol?) (var-exp x)]
       [_ x]))
+
+(define (call-with-to-exp fn . args)
   (apply fn (map to-exp args)))
 
 (define (diff-exp* e1 e2)
@@ -30,7 +31,7 @@
   (call-with-to-exp if-exp e1 e2 e3))
 
 (define (let-exp* e1 e2 e3)
-  (call-with-to-exp let-exp e1 e2 e3))
+  (let-exp e1 (to-exp e2) (to-exp e3)))
 
 (check-exp-parse? "1" (const-exp 1))
 (check-exp-parse? "123" (const-exp 123))

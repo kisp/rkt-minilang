@@ -22,13 +22,13 @@
 (define (expval->num v)
   (if (integer? v)
       v
-      (error "Not a number:" v)))
+      (error "Not a number" v)))
 
 (: expval->bool (-> ExpVal Boolean))
 (define (expval->bool v)
   (if (boolean? v)
       v
-      (error "Not a bool:" v)))
+      (error "Not a bool" v)))
 
 (: num-val (-> Integer ExpVal))
 (define (num-val x) x)

@@ -23,7 +23,11 @@
       (unless (or (eof-object? input)
                   (member input '("q" "quit" "exit")))
         (match (parse-program input)
-          [(success ast) (pretty-print (value-of-program ast))]
+          [(success ast)
+           (with-handlers ([exn:fail? (lambda (exn)
+                                        (display "Error: ")
+                                        (displayln (exn-message exn)))])
+             (pretty-print (value-of-program ast)))]
           [(failure message) (displayln (parse-error->string message))])
         (rec)))))
 

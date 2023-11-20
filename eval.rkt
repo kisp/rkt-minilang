@@ -37,8 +37,8 @@
 (define (bool-val x) x)
 
 (: value-of (-> Exp Env ExpVal))
-(define (value-of e env)
-  (match e
+(define (value-of exp env)
+  (match exp
     [(const-exp num) num]
     [(var-exp var) (lookup-env var env)]
     [(diff-exp e1 e2)

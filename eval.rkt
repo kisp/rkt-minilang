@@ -3,6 +3,7 @@
 (provide value-of value-of-program)
 
 (require "types.rkt")
+;; (require "parse-typed.rkt")
 
 (: value-of (-> Exp Integer))
 (define (value-of e)

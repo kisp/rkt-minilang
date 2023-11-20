@@ -8,7 +8,7 @@ test:
 	raco test *-test.rkt
 
 compile:
-	raco make *.rkt
+	raco make -v *.rkt
 
 clean:
 	rm -rf compiled

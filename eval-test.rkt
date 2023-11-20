@@ -2,10 +2,8 @@
 
 (require typed/rackunit
          "types.rkt"
+         "parse-typed.rkt"
          "eval.rkt")
-(require/typed "parse.rkt"
-  [parse-program! (-> String Progr)]
-  [parse-exp! (-> String Exp)])
 
 (check-equal? (value-of (parse-exp! "1")) 1)
 (check-equal? (value-of (parse-exp! "123")) 123)

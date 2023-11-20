@@ -20,5 +20,7 @@ jobs:
           version: '8.10'
       - name: Install Package and its Dependencies
         run: raco pkg install --auto --batch --no-docs
+      - name: Compile
+        run: make compile
       - name: Run Tests
         run: make test
